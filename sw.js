@@ -3,7 +3,7 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://www.eduspark.site/assets/images/logo.png',
+  'logo.png',
 ];
 
 // Install event
