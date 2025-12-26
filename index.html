@@ -45,6 +45,153 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Loading Animation Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4a6fa5, #166088);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        #loading-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+            padding: 0 20px;
+            max-width: 500px;
+        }
+
+        .loading-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        .loading-progress {
+            width: 100%;
+            max-width: 400px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 20px auto;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: #4fc3a1;
+            width: 0%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            animation: loadingPulse 2s infinite;
+        }
+
+        @keyframes loadingPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .loading-text {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 15px;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            width: 20px;
+            text-align: left;
+        }
+
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Mobile-optimized loading animation */
+        @media (max-width: 768px) {
+            .video-container {
+                height: 250px;
+                max-width: 90%;
+                border-radius: 15px;
+            }
+
+            .loading-title {
+                font-size: 1.8rem;
+            }
+
+            .loading-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .loading-content {
+                padding: 0 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-container {
+                height: 200px;
+                border-radius: 12px;
+            }
+
+            .loading-title {
+                font-size: 1.5rem;
+            }
+
+            .loading-subtitle {
+                font-size: 1rem;
+            }
+
+            .loading-progress {
+                max-width: 300px;
+            }
+        }
+
+        /* Original page styles (keep all existing styles) */
         * {
             margin: 0;
             padding: 0;
@@ -435,55 +582,83 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-user-graduate"></i>
-                    <h1>Students Tuition Profile</h1>
-                </div>
-                <div class="stats">
-                    <p id="total-students">Loading student data...</p>
-                </div>
-            </div>
+    <!-- Loading Animation Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="video-container">
+            <video id="loading-video" autoplay muted loop playsinline>
+                <source src="study.mp4" type="video/mp4">
+                <!-- Fallback if video doesn't load -->
+                Your browser does not support the video tag.
+            </video>
         </div>
-    </header>
-
-    <div class="container">
-        <div class="search-filter-container">
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Search by name, student ID, or class...">
-                <button class="search-btn" id="search-btn">
-                    <i class="fas fa-search"></i> Search
-                </button>
+        <div class="loading-content">
+            <h1 class="loading-title">Students Tuition Profile</h1>
+            <p class="loading-subtitle">Loading student data, please wait</p>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="progress-bar"></div>
             </div>
-            
-            <div class="filter-container">
-                <div class="filter-label">Filter by Class:</div>
-                <div class="class-filter" id="class-filter">
-                    <!-- Classes will be dynamically added here -->
-                </div>
-                <button class="clear-filters" id="clear-filters">
-                    <i class="fas fa-times"></i> Clear Filters
-                </button>
-            </div>
-        </div>
-
-        <div class="students-container" id="students-container">
-            <div class="loading">
-                <div class="loading-spinner"></div>
-                <p>Loading student data...</p>
-            </div>
+            <p class="loading-text">Preparing your dashboard<span class="loading-dots"></span></p>
         </div>
     </div>
 
-    <footer>
+    <!-- Main Page Content (hidden initially) -->
+    <div id="main-content" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-user-graduate"></i>
+                        <h1>Students Tuition Profile</h1>
+                    </div>
+                    <div class="stats">
+                        <p id="total-students">Loading student data...</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
         <div class="container">
-            <p>Students Tuition Profile System &copy; 2025 |<a href="admin.html"> Powerd by Saheb Ali</a></p>
+            <div class="search-filter-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search by name, student ID, or class...">
+                    <button class="search-btn" id="search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                
+                <div class="filter-container">
+                    <div class="filter-label">Filter by Class:</div>
+                    <div class="class-filter" id="class-filter">
+                        <!-- Classes will be dynamically added here -->
+                    </div>
+                    <button class="clear-filters" id="clear-filters">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                </div>
+            </div>
+
+            <div class="students-container" id="students-container">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading student data...</p>
+                </div>
+            </div>
         </div>
-    </footer>
+
+        <footer>
+            <div class="container">
+                <p>Students Tuition Profile System &copy; 2025 |<a href="admin.html"> Powerd by Saheb Ali</a></p>
+            </div>
+        </footer>
+    </div>
 
     <script>
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const mainContent = document.getElementById('main-content');
+        const progressBar = document.getElementById('progress-bar');
+        const loadingVideo = document.getElementById('loading-video');
+
         // Replace with your deployed Google Apps Script URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAt-cYUPLA5sH9B1EaYZtrpIEbAVXAh3V0aSRWMswi2GDk5p6effHUG2fRcchGThoMFw/exec';
         
@@ -519,7 +694,7 @@
         let filteredStudents = [];
         let activeClassFilter = null;
 
-        // DOM elements
+        // Main DOM elements
         const studentsContainer = document.getElementById('students-container');
         const searchInput = document.getElementById('search-input');
         const searchBtn = document.getElementById('search-btn');
@@ -528,8 +703,21 @@
         const totalStudentsEl = document.getElementById('total-students');
 
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            loadStudents();
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Simulate video loading
+            simulateProgress();
+            
+            // Load students data
+            await loadStudents();
+            
+            // Hide loading overlay and show main content
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                mainContent.style.display = 'block';
+                
+                // Pause video to save resources
+                loadingVideo.pause();
+            }, 500); // Small delay for smooth transition
             
             // Event listeners
             searchBtn.addEventListener('click', performSearch);
@@ -539,10 +727,28 @@
             clearFiltersBtn.addEventListener('click', clearFilters);
         });
 
+        // Simulate loading progress
+        function simulateProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) {
+                    clearInterval(interval);
+                    progressBar.style.width = '90%'; // Hold at 90% until data loads
+                } else {
+                    progressBar.style.width = progress + '%';
+                }
+            }, 200);
+        }
+
         // Load students from Google Sheets or use sample data
         async function loadStudents() {
+            // Update progress to show data is being fetched
+            progressBar.style.width = '95%';
+            
             if (DEMO_MODE) {
                 // Use sample data for demo
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
                 allStudents = sampleData;
                 displayStudents(allStudents);
                 updateClassFilters(allStudents);
@@ -572,6 +778,9 @@
                     `;
                 }
             }
+            
+            // Complete the progress bar
+            progressBar.style.width = '100%';
         }
 
         // Perform search based on input and filters
@@ -732,6 +941,18 @@
         function updateTotalStudents(count) {
             totalStudentsEl.textContent = `Total Students: ${count}`;
         }
+
+        // Handle video errors
+        loadingVideo.addEventListener('error', function() {
+            console.log('Video failed to load, showing fallback content');
+            // You could add a fallback image or animation here
+            const videoContainer = document.querySelector('.video-container');
+            videoContainer.innerHTML = `
+                <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.3);">
+                    <i class="fas fa-graduation-cap" style="font-size: 100px; color: white;"></i>
+                </div>
+            `;
+        });
     </script>
 </body>
 </html>
