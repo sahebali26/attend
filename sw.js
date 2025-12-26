@@ -3,7 +3,7 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  'logo.png',
+  'https://sahebali26.github.io/attend/logo.png',
 ];
 
 // Install event
