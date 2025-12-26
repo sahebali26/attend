@@ -1,0 +1,272 @@
+<!-- File: attendent.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance History</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #4a6fa5;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #3a5a85;
+        }
+
+        .student-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .student-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .attendance-table th {
+            background: #4a6fa5;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .attendance-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .attendance-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .present {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .absent {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .student-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .attendance-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calendar-alt"></i> Attendance History</h1>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Students
+            </a>
+        </header>
+        
+        <div id="student-details" class="student-info">
+            <!-- Student details will be loaded here -->
+        </div>
+        
+        <h2>Attendance Records</h2>
+        <div id="attendance-data">
+            <!-- Attendance data will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        // Get student ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('student') || 'M001';
+        
+        // In a real implementation, you would fetch this data from Google Sheets
+        // For now, we'll show sample data
+        
+        // Sample student data
+        const sampleStudent = {
+            "SL": 1,
+            "Student_ID": "M001",
+            "Student_Name": "Mokibul Islam",
+            "Class": "7",
+            "Present Days": 17,
+            "Pending Fee moth": 0,
+            "Paid": 2,
+            "Student Photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrsk1nXh447Z_rVocQ-Z9_o1SLVlu66eNB1A&s"
+        };
+        
+        // Sample attendance data
+        const sampleAttendance = [
+            { date: "2023-10-01", status: "Present" },
+            { date: "2023-10-02", status: "Present" },
+            { date: "2023-10-03", status: "Absent" },
+            { date: "2023-10-04", status: "Present" },
+            { date: "2023-10-05", status: "Present" },
+            { date: "2023-10-08", status: "Present" },
+            { date: "2023-10-09", status: "Present" },
+            { date: "2023-10-10", status: "Present" },
+            { date: "2023-10-11", status: "Absent" },
+            { date: "2023-10-12", status: "Present" }
+        ];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            displayStudentDetails(sampleStudent);
+            displayAttendanceData(sampleAttendance);
+        });
+        
+        function displayStudentDetails(student) {
+            const studentDetails = document.getElementById('student-details');
+            
+            studentDetails.innerHTML = `
+                <img src="${student.Student_Photo || 'https://via.placeholder.com/80'}" 
+                     alt="${student.Student_Name}" 
+                     class="student-photo"
+                     onerror="this.src='https://via.placeholder.com/80?text=Student'">
+                <div>
+                    <h3>${student.Student_Name}</h3>
+                    <p><strong>Student ID:</strong> ${student.Student_ID}</p>
+                    <p><strong>Class:</strong> ${student.Class}</p>
+                    <p><strong>Total Present Days:</strong> ${student['Present Days']}</p>
+                </div>
+            `;
+        }
+        
+        function displayAttendanceData(attendance) {
+            const attendanceData = document.getElementById('attendance-data');
+            
+            if (attendance.length === 0) {
+                attendanceData.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>No attendance records found for this student.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let tableHTML = `
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            attendance.forEach(record => {
+                const date = new Date(record.date);
+                const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const dayName = dayNames[date.getDay()];
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                const statusClass = record.status === "Present" ? "present" : "absent";
+                
+                tableHTML += `
+                    <tr>
+                        <td>${formattedDate}</td>
+                        <td>${dayName}</td>
+                        <td class="${statusClass}">${record.status}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            attendanceData.innerHTML = tableHTML;
+        }
+    </script>
+</body>
+</html>
