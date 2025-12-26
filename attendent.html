@@ -335,6 +335,14 @@
             background-color: rgba(255, 193, 7, 0.1);
             color: #ffc107;
         }
+        .status-holiday {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #8707fff8;
+        }
+        .status-vacation {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #07c5ff;
+        }
 
         .status-na {
             background-color: rgba(108, 117, 125, 0.1);
@@ -788,6 +796,10 @@
                 return 'status-absent';
             } else if (status === 's' || status === 'sunday') {
                 return 'status-sunday';
+            } else if (status === 'h' || status === 'holiday') {
+                return 'status-holiday';
+            } else if (status === 'v' || status === 'vacation') {
+                return 'status-vacation';
             } else {
                 return 'status-na';
             }
@@ -800,6 +812,8 @@
             if (status === 'p') return 'Present';
             if (status === 'a') return 'Absent';
             if (status === 's') return 'sunday';
+            if (status === 'h') return 'holiday';
+            if (status === 'v') return 'vacation';
             return 'N/A';
         }
 
