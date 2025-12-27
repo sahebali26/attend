@@ -867,7 +867,7 @@
                     </div>
                     <div class="stat-content">
                         <div class="stat-numbers">
-                            <div class="stat-value" id="total-revenue">৳0</div>
+                            <div class="stat-value" id="total-revenue">₹0</div>
                             <div class="stat-label">Total Revenue</div>
                         </div>
                         <div class="stat-change" id="revenue-change">+0%</div>
@@ -882,11 +882,11 @@
                     Quick Actions
                 </div>
                 <div class="actions-grid">
-                    <a href="st-atten.html" class="action-btn">
-                        <div class="action-icon mark-attendance">
-                            <i class="fas fa-calendar-plus"></i>
+                    <a href="receipt.html" class="action-btn">
+                        <div class="action-icon payment">
+                            <i class="fas fa-money-check-alt"></i>
                         </div>
-                        <div class="action-text">Mark Attendance</div>
+                        <div class="action-text">Reciept Generator</div>
                     </a>
 
                     <a href="index.html" target="_blank" class="action-btn">
@@ -924,6 +924,12 @@
                         </div>
                         <div class="action-text">Record Payment</div>
                     </button>
+                    <a href="st-atten.html" class="action-btn">
+                        <div class="action-icon mark-attendance">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="action-text">Mark Attendance</div>
+                    </a>
                 </div>
             </div>
 
@@ -1216,7 +1222,7 @@
                     <input type="text" id="newStudentPhoto" class="form-control" placeholder="https://example.com/photo.jpg">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Monthly Fee (৳)</label>
+                    <label class="form-label">Monthly Fee (₹)</label>
                     <input type="number" id="newStudentFee" class="form-control" placeholder="e.g., 1000" value="1000">
                 </div>
             </div>
@@ -1247,7 +1253,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Amount (৳)</label>
+                    <label class="form-label">Amount (₹)</label>
                     <input type="number" id="paymentAmount" class="form-control" placeholder="Enter amount">
                 </div>
                 <div class="form-group">
@@ -1547,7 +1553,7 @@
             }
             
             // Total Revenue
-            document.getElementById('total-revenue').textContent = `৳${dashboardData.totalRevenue || 0}`;
+            document.getElementById('total-revenue').textContent = `₹${dashboardData.totalRevenue || 0}`;
             document.getElementById('revenue-change').textContent = `+${dashboardData.revenueChange || 0}%`;
         }
         
@@ -1615,7 +1621,7 @@
                     <td class="status-badge pending-fee">${student['Pending Fee moth'] || 0} months</td>
                     <td class="status-badge paid">${student.Paid || 0} months</td>
                     <td>${student.lastPayment || 'Never'}</td>
-                    <td>৳${totalDue}</td>
+                    <td>₹${totalDue}</td>
                     <td>
                         <button class="btn btn-success btn-sm" onclick="recordPaymentForStudent('${student.Student_ID}')">
                             <i class="fas fa-money-bill-wave"></i> Pay
@@ -1704,7 +1710,7 @@
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                     datasets: [{
-                        label: 'Revenue (৳)',
+                        label: 'Revenue (₹)',
                         data: [15000, 18000, 22000, 19000, 25000, 28000],
                         backgroundColor: '#4fc3a1',
                         borderColor: '#3da98a',
@@ -1719,7 +1725,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '৳' + value;
+                                    return '₹' + value;
                                 }
                             }
                         }
@@ -1923,7 +1929,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showMessage(`Payment of ৳${amount} recorded successfully!`, 'success');
+                    showMessage(`Payment of ₹${amount} recorded successfully!`, 'success');
                     
                     // Clear form
                     document.getElementById('paymentStudentId').value = '';

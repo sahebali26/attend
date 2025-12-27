@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipt Generator</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="Receipt Generator">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Receipt Generator">
+    <meta name="description" content="Generate and download payment receipts">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4a6fa5">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- html2canvas for screenshot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4fc3a1;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            --receipt-bg: #ffffff;
+            --border-color: #e1e5eb;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f2f5 0%, #e9ecef 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        h1 i {
+            color: var(--accent-color);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Form Section */
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .section-title i {
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-label i {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: white;
+            width: 100%;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(79, 195, 161, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-select {
+            cursor: pointer;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .receipt-preview {
+            background: var(--receipt-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 2px solid var(--border-color);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Receipt Styling */
+        .receipt-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .receipt-title {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .receipt-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .institute-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .institute-name {
+            font-size: 1.4rem;
+            color: var(--secondary-color);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .instructor-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .receipt-details {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .detail-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .detail-title {
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e9ecef;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 140px;
+        }
+
+        .detail-value {
+            color: #333;
+            text-align: right;
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .amount-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+        }
+
+        .total-amount {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .amount-in-words {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-style: italic;
+            color: #666;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .receipt-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .signature-box {
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .signature-line {
+            width: 150px;
+            height: 1px;
+            background: #333;
+            margin: 20px auto 5px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .action-btn i {
+            font-size: 1.1rem;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(74, 111, 165, 0.3);
+        }
+
+        .download-pdf {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .download-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .download-image {
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: white;
+        }
+
+        .download-image:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .share-btn {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #333;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.3);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        /* Messages */
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.active {
+            display: flex;
+        }
+
+        .message.success {
+            background: white;
+            color: #28a745;
+            border: 2px solid #28a745;
+        }
+
+        .message.error {
+            background: white;
+            color: #dc3545;
+            border: 2px solid #dc3545;
+        }
+
+        .message.info {
+            background: white;
+            color: #17a2b8;
+            border: 2px solid #17a2b8;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Footer */
+        footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .form-section, .preview-section {
+                padding: 20px;
+            }
+
+            .receipt-preview {
+                padding: 20px;
+            }
+
+            .receipt-title {
+                font-size: 1.8rem;
+            }
+
+            .signature-section {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .signature-box {
+                min-width: 100%;
+            }
+
+            .action-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .instructor-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .detail-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .detail-label, .detail-value {
+                text-align: left;
+                min-width: 100%;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">Generating PDF...</p>
+        </div>
+    </div>
+
+    <!-- Message Container -->
+    <div class="message" id="message"></div>
+
+    <div class="container">
+        <header>
+            <h1>
+                <i class="fas fa-receipt"></i>
+                Payment Receipt Generator
+            </h1>
+            <p class="subtitle">Generate professional receipts for student payments | Download as PDF or Image</p>
+        </header>
+
+        <!-- Form Section -->
+        <div class="form-section">
+            <div>
+                <div class="section-title">
+                    <i class="fas fa-edit"></i>
+                    Student Information
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user-graduate"></i>
+                        Student Name
+                    </label>
+                    <input type="text" id="studentName" class="form-input" placeholder="Enter student's full name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-id-card"></i>
+                        Student ID (Optional)
+                    </label>
+                    <input type="text" id="studentId" class="form-input" placeholder="e.g., S001">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-graduation-cap"></i>
+                        Class/Grade
+                    </label>
+                    <input type="text" id="studentClass" class="form-input" placeholder="e.g., Class 7">
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Payment Period
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-day"></i>
+                            Starting Date
+                        </label>
+                        <input type="date" id="startDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-day"></i>
+                            Ending Date
+                        </label>
+                        <input type="date" id="endDate" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Date of Payment
+                    </label>
+                    <input type="date" id="paymentDate" class="form-input">
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">
+                    <i class="fas fa-money-check-alt"></i>
+                    Payment Details
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-coins"></i>
+                        Amount Paid (₹)
+                    </label>
+                    <input type="number" id="amountPaid" class="form-input" placeholder="Enter amount in Indian Rupee" min="0" step="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-credit-card"></i>
+                        Payment Method
+                    </label>
+                    <select id="paymentMethod" class="form-select">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Mobile Banking">Mobile Banking (bKash/Nagad/Rocket)</option>
+                        <option value="Check">Check</option>
+                        <option value="Online Payment">Online Payment</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-sticky-note"></i>
+                        Transaction ID/Notes (Optional)
+                    </label>
+                    <input type="text" id="transactionId" class="form-input" placeholder="Transaction ID or additional notes">
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Additional Information
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-book"></i>
+                        Subject/Type
+                    </label>
+                    <input type="text" id="subject" class="form-input" placeholder="e.g., Tuition Fee, Monthly Fee, Exam Fee" value="Tuition Fee">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-comment"></i>
+                        Remarks (Optional)
+                    </label>
+                    <textarea id="remarks" class="form-textarea" placeholder="Any additional information or remarks..."></textarea>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn generate-btn" id="generateBtn">
+                    <i class="fas fa-sync-alt"></i> Generate Receipt
+                </button>
+                <button class="action-btn reset-btn" id="resetBtn">
+                    <i class="fas fa-redo"></i> Reset Form
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <div class="section-title">
+                <i class="fas fa-eye"></i>
+                Receipt Preview
+            </div>
+            <div class="preview-container">
+                <div class="receipt-preview" id="receiptPreview">
+                    <!-- Receipt content will be generated here -->
+                    <div class="receipt-header">
+                        <div class="receipt-title">PAYMENT RECEIPT</div>
+                        <div class="receipt-subtitle">Official Payment Confirmation</div>
+                    </div>
+
+                    <div class="institute-info">
+                        <div class="institute-name">Saheb Sir's Tuition Center</div>
+                        <div class="instructor-info">
+                            <div><i class="fas fa-user-tie"></i> Instructor: Saheb Ali</div>
+                            <div><i class="fas fa-phone"></i> Phone: 6003816583</div>
+                            <div><i class="fas fa-envelope"></i> Email: Sahebali8474@gmail.com</div>
+                        </div>
+                    </div>
+
+                    <div class="receipt-details">
+                        <div class="detail-group">
+                            <div class="detail-title">Student Information</div>
+                            <div class="detail-item">
+                                <span class="detail-label">Student Name:</span>
+                                <span class="detail-value" id="previewStudentName">Not Provided</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Student ID:</span>
+                                <span class="detail-value" id="previewStudentId">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Class:</span>
+                                <span class="detail-value" id="previewStudentClass">-</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-group">
+                            <div class="detail-title">Payment Information</div>
+                            <div class="detail-item">
+                                <span class="detail-label">Payment Date:</span>
+                                <span class="detail-value" id="previewPaymentDate">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Period:</span>
+                                <span class="detail-value" id="previewPeriod">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Subject/Type:</span>
+                                <span class="detail-value" id="previewSubject">Tuition Fee</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-group">
+                            <div class="detail-title">Payment Details</div>
+                            <div class="amount-section">
+                                <div class="total-amount">
+                                    <span>Total Amount:</span>
+                                    <span id="previewAmount">₹ 0.00</span>
+                                </div>
+                                <div class="amount-in-words" id="previewAmountWords">
+                                    Zero Rupee Only
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Payment Method:</span>
+                                <span class="detail-value" id="previewPaymentMethod">Cash</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Transaction ID:</span>
+                                <span class="detail-value" id="previewTransactionId">-</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-group" id="remarksSection" style="display: none;">
+                            <div class="detail-title">Remarks</div>
+                            <div id="previewRemarks"></div>
+                        </div>
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <div>Student/Parent Signature</div>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <div>Authorized Signature</div>
+                            <div style="margin-top: 5px; font-weight: 600;">Saheb Ali</div>
+                            <div>Instructor</div>
+                        </div>
+                    </div>
+
+                    <div class="receipt-footer">
+                        <div>This is a computer-generated receipt. No signature required.</div>
+                        <div style="margin-top: 5px;">Generated on: <span id="previewGeneratedDate">-</span></div>
+                        <div style="margin-top: 5px; font-size: 0.8rem; color: #999;">Receipt ID: <span id="previewReceiptId">-</span></div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn download-pdf" id="downloadPdfBtn">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </button>
+                    <button class="action-btn download-image" id="downloadImageBtn">
+                        <i class="fas fa-camera"></i> Download Image
+                    </button>
+                    <button class="action-btn share-btn" id="shareBtn">
+                        <i class="fas fa-share-alt"></i> Share Receipt
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Payment Receipt Generator &copy; 2026 | Developed by Saheb Ali | All receipts are securely generated</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize global variables
+        const { jsPDF } = window.jspdf;
+        let currentReceiptData = null;
+
+        // DOM Elements
+        const messageDiv = document.getElementById('message');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+
+        // Form Elements
+        const studentNameInput = document.getElementById('studentName');
+        const studentIdInput = document.getElementById('studentId');
+        const studentClassInput = document.getElementById('studentClass');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const paymentDateInput = document.getElementById('paymentDate');
+        const amountPaidInput = document.getElementById('amountPaid');
+        const paymentMethodSelect = document.getElementById('paymentMethod');
+        const transactionIdInput = document.getElementById('transactionId');
+        const subjectInput = document.getElementById('subject');
+        const remarksInput = document.getElementById('remarks');
+
+        // Preview Elements
+        const previewStudentName = document.getElementById('previewStudentName');
+        const previewStudentId = document.getElementById('previewStudentId');
+        const previewStudentClass = document.getElementById('previewStudentClass');
+        const previewPaymentDate = document.getElementById('previewPaymentDate');
+        const previewPeriod = document.getElementById('previewPeriod');
+        const previewSubject = document.getElementById('previewSubject');
+        const previewAmount = document.getElementById('previewAmount');
+        const previewAmountWords = document.getElementById('previewAmountWords');
+        const previewPaymentMethod = document.getElementById('previewPaymentMethod');
+        const previewTransactionId = document.getElementById('previewTransactionId');
+        const previewRemarks = document.getElementById('previewRemarks');
+        const previewGeneratedDate = document.getElementById('previewGeneratedDate');
+        const previewReceiptId = document.getElementById('previewReceiptId');
+        const remarksSection = document.getElementById('remarksSection');
+
+        // Buttons
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        const downloadImageBtn = document.getElementById('downloadImageBtn');
+        const shareBtn = document.getElementById('shareBtn');
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default dates
+            setDefaultDates();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Generate initial preview
+            generatePreview();
+        });
+
+        // Set default dates
+        function setDefaultDates() {
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            // Format dates as YYYY-MM-DD
+            const formatDate = (date) => date.toISOString().split('T')[0];
+            
+            startDateInput.value = formatDate(firstDayOfMonth);
+            endDateInput.value = formatDate(lastDayOfMonth);
+            paymentDateInput.value = formatDate(today);
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Generate button
+            generateBtn.addEventListener('click', generatePreview);
+            
+            // Reset button
+            resetBtn.addEventListener('click', resetForm);
+            
+            // Download PDF button
+            downloadPdfBtn.addEventListener('click', downloadPDF);
+            
+            // Download Image button
+            downloadImageBtn.addEventListener('click', downloadImage);
+            
+            // Share button
+            shareBtn.addEventListener('click', shareReceipt);
+            
+            // Real-time preview updates
+            const formInputs = [
+                studentNameInput, studentIdInput, studentClassInput,
+                startDateInput, endDateInput, paymentDateInput,
+                amountPaidInput, paymentMethodSelect, transactionIdInput,
+                subjectInput, remarksInput
+            ];
+            
+            formInputs.forEach(input => {
+                input.addEventListener('input', generatePreview);
+                input.addEventListener('change', generatePreview);
+            });
+        }
+
+        // Generate preview
+        function generatePreview() {
+            // Get form values
+            const studentName = studentNameInput.value.trim() || 'Not Provided';
+            const studentId = studentIdInput.value.trim();
+            const studentClass = studentClassInput.value.trim();
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            const paymentDate = paymentDateInput.value;
+            const amount = parseFloat(amountPaidInput.value) || 0;
+            const paymentMethod = paymentMethodSelect.value;
+            const transactionId = transactionIdInput.value.trim();
+            const subject = subjectInput.value.trim() || 'Tuition Fee';
+            const remarks = remarksInput.value.trim();
+            
+            // Format dates
+            const formatDisplayDate = (dateString) => {
+                if (!dateString) return '-';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            };
+            
+            // Update preview
+            previewStudentName.textContent = studentName;
+            previewStudentId.textContent = studentId || '-';
+            previewStudentClass.textContent = studentClass || '-';
+            previewPaymentDate.textContent = formatDisplayDate(paymentDate);
+            previewPeriod.textContent = startDate && endDate 
+                ? `${formatDisplayDate(startDate)} to ${formatDisplayDate(endDate)}`
+                : '-';
+            previewSubject.textContent = subject;
+            previewAmount.textContent = `₹ ${amount.toLocaleString('en-IN')}`;
+            previewAmountWords.textContent = convertToWords(amount);
+            previewPaymentMethod.textContent = paymentMethod;
+            previewTransactionId.textContent = transactionId || '-';
+            
+            // Handle remarks
+            if (remarks) {
+                previewRemarks.textContent = remarks;
+                remarksSection.style.display = 'block';
+            } else {
+                remarksSection.style.display = 'none';
+            }
+            
+            // Generated date and receipt ID
+            const now = new Date();
+            previewGeneratedDate.textContent = now.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Generate receipt ID
+            const receiptId = generateReceiptId();
+            previewReceiptId.textContent = receiptId;
+            
+            // Store current data
+            currentReceiptData = {
+                studentName,
+                studentId,
+                studentClass,
+                startDate: formatDisplayDate(startDate),
+                endDate: formatDisplayDate(endDate),
+                paymentDate: formatDisplayDate(paymentDate),
+                amount,
+                paymentMethod,
+                transactionId,
+                subject,
+                remarks,
+                generatedDate: previewGeneratedDate.textContent,
+                receiptId
+            };
+            
+            // Enable download buttons if there's data
+            const hasData = studentName !== 'Not Provided' && amount > 0;
+            downloadPdfBtn.disabled = !hasData;
+            downloadImageBtn.disabled = !hasData;
+            shareBtn.disabled = !hasData;
+            
+            showMessage('Receipt preview updated', 'success');
+        }
+
+        // Convert number to words (Indian Rupee)
+        function convertToWords(number) {
+            if (number === 0) return 'Zero Rupee Only';
+            
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            
+            function convertHundreds(num) {
+                let result = '';
+                
+                if (num >= 100) {
+                    result += ones[Math.floor(num / 100)] + ' Hundred ';
+                    num %= 100;
+                }
+                
+                if (num >= 20) {
+                    result += tens[Math.floor(num / 10)] + ' ';
+                    num %= 10;
+                } else if (num >= 10) {
+                    result += teens[num - 10] + ' ';
+                    num = 0;
+                }
+                
+                if (num > 0) {
+                    result += ones[num] + ' ';
+                }
+                
+                return result.trim();
+            }
+            
+            let words = '';
+            let num = Math.floor(number);
+            
+            if (num >= 10000000) { // Crore
+                words += convertHundreds(Math.floor(num / 10000000)) + ' Crore ';
+                num %= 10000000;
+            }
+            
+            if (num >= 100000) { // Lakh
+                words += convertHundreds(Math.floor(num / 100000)) + ' Lakh ';
+                num %= 100000;
+            }
+            
+            if (num >= 1000) { // Thousand
+                words += convertHundreds(Math.floor(num / 1000)) + ' Thousand ';
+                num %= 1000;
+            }
+            
+            if (num > 0) {
+                words += convertHundreds(num);
+            }
+            
+            // Handle decimal part (paisa)
+            const paisa = Math.round((number - Math.floor(number)) * 100);
+            if (paisa > 0) {
+                words += ' Rupee and ' + convertHundreds(paisa) + ' Paisa';
+            } else {
+                words += ' Rupee';
+            }
+            
+            return words + ' Only';
+        }
+
+        // Generate unique receipt ID
+        function generateReceiptId() {
+            const date = new Date();
+            const year = date.getFullYear().toString().slice(-2);
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            
+            return `RCPT-${year}${month}${day}-${random}`;
+        }
+
+        // Reset form
+        function resetForm() {
+            if (confirm('Are you sure you want to reset the form? All data will be lost.')) {
+                studentNameInput.value = '';
+                studentIdInput.value = '';
+                studentClassInput.value = '';
+                setDefaultDates();
+                amountPaidInput.value = '';
+                paymentMethodSelect.value = 'Cash';
+                transactionIdInput.value = '';
+                subjectInput.value = 'Tuition Fee';
+                remarksInput.value = '';
+                
+                generatePreview();
+                showMessage('Form reset successfully', 'info');
+            }
+        }
+
+        // Download as PDF
+        async function downloadPDF() {
+            if (!currentReceiptData) {
+                showMessage('Please generate a receipt first', 'error');
+                return;
+            }
+            
+            showLoading('Generating PDF...');
+            
+            try {
+                // Create a temporary element for PDF generation
+                const tempDiv = document.createElement('div');
+                tempDiv.style.width = '210mm'; // A4 width
+                tempDiv.style.minHeight = '297mm'; // A4 height
+                tempDiv.style.padding = '20mm';
+                tempDiv.style.background = 'white';
+                tempDiv.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                tempDiv.style.color = '#333';
+                
+                // Clone and style the receipt
+                const receiptClone = document.getElementById('receiptPreview').cloneNode(true);
+                receiptClone.style.boxShadow = 'none';
+                receiptClone.style.border = 'none';
+                receiptClone.style.padding = '0';
+                receiptClone.style.margin = '0';
+                
+                // Enhance styling for PDF
+                const style = document.createElement('style');
+                style.textContent = `
+                    .receipt-title { font-size: 28px !important; }
+                    .institute-name { font-size: 20px !important; }
+                    .total-amount { font-size: 22px !important; }
+                    .detail-label { font-weight: 700 !important; }
+                    .signature-line { border-bottom: 1px solid #000 !important; }
+                    * { -webkit-print-color-adjust: exact !important; }
+                `;
+                receiptClone.appendChild(style);
+                
+                tempDiv.appendChild(receiptClone);
+                document.body.appendChild(tempDiv);
+                
+                // Generate PDF
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                await html2canvas(tempDiv, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 297; // A4 height in mm
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                    
+                    // Generate filename
+                    const studentName = currentReceiptData.studentName.replace(/\s+/g, '_');
+                    const filename = `Payment_Receipt_${studentName}_${currentReceiptData.receiptId}.pdf`;
+                    
+                    // Save PDF
+                    pdf.save(filename);
+                    
+                    // Clean up
+                    document.body.removeChild(tempDiv);
+                    
+                    showMessage('PDF downloaded successfully!', 'success');
+                });
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                showMessage('Failed to generate PDF', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Download as Image
+        async function downloadImage() {
+            if (!currentReceiptData) {
+                showMessage('Please generate a receipt first', 'error');
+                return;
+            }
+            
+            showLoading('Generating Image...');
+            
+            try {
+                const receiptElement = document.getElementById('receiptPreview');
+                
+                await html2canvas(receiptElement, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    // Convert canvas to image
+                    const imageData = canvas.toDataURL('image/png');
+                    
+                    // Create download link
+                    const link = document.createElement('a');
+                    const studentName = currentReceiptData.studentName.replace(/\s+/g, '_');
+                    const filename = `Payment_Receipt_${studentName}_${currentReceiptData.receiptId}.png`;
+                    
+                    link.download = filename;
+                    link.href = imageData;
+                    link.click();
+                    
+                    showMessage('Image downloaded successfully!', 'success');
+                });
+                
+            } catch (error) {
+                console.error('Error generating image:', error);
+                showMessage('Failed to generate image', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Share receipt
+        async function shareReceipt() {
+            if (!currentReceiptData) {
+                showMessage('Please generate a receipt first', 'error');
+                return;
+            }
+            
+            if (navigator.share) {
+                try {
+                    // Generate image first
+                    showLoading('Preparing receipt for sharing...');
+                    
+                    const receiptElement = document.getElementById('receiptPreview');
+                    const canvas = await html2canvas(receiptElement, {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    const imageData = canvas.toDataURL('image/png');
+                    
+                    // Convert base64 to blob
+                    const blob = await (await fetch(imageData)).blob();
+                    const file = new File([blob], 'receipt.png', { type: 'image/png' });
+                    
+                    const shareData = {
+                        title: `Payment Receipt - ${currentReceiptData.studentName}`,
+                        text: `Payment receipt for ${currentReceiptData.studentName}. Amount: ₹${currentReceiptData.amount.toLocaleString('en-IN')}`,
+                        files: [file]
+                    };
+                    
+                    if (navigator.canShare && navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        showMessage('Receipt shared successfully!', 'success');
+                    } else {
+                        showMessage('Sharing not supported on this device', 'info');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error sharing:', error);
+                    if (error.name !== 'AbortError') {
+                        showMessage('Failed to share receipt', 'error');
+                    }
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                // Fallback: Download image and show message
+                showMessage('Sharing not available. Please download and share manually.', 'info');
+                setTimeout(() => {
+                    downloadImage();
+                }, 1000);
+            }
+        }
+
+        // Show loading overlay
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loadingOverlay.classList.add('active');
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
+        }
+
+        // Show message
+        function showMessage(text, type = 'info') {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type} active`;
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                messageDiv.classList.remove('active');
+            }, 5000);
+        }
+
+        // Auto-fill sample data for testing (remove in production)
+        function fillSampleData() {
+            studentNameInput.value = 'Mokibul Islam';
+            studentIdInput.value = 'M001';
+            studentClassInput.value = 'Class 7';
+            amountPaidInput.value = '2000';
+            transactionIdInput.value = 'TX123456789';
+            remarksInput.value = 'Monthly tuition fee for November 2026. Thank you for your payment.';
+            generatePreview();
+            showMessage('Sample data loaded for testing', 'info');
+        }
+
+        // Uncomment the line below to enable sample data for testing
+        // setTimeout(fillSampleData, 1000);
+    </script>
+</body>
+</html>
